@@ -19,17 +19,17 @@ typedef struct {
 		map <long,long> assignment;
 } Node;
 	
-	void findBound(Node &SubProblem, long start_X, long start_Y, long limit) {
-		SubProblem.actualCost = SubProblem.actualCost + inputArray[start_X][start_Y];
-		SubProblem.bound = SubProblem.actualCost;
-		SubProblem.doneX.insert(start_X);
-		SubProblem.doneY.insert(start_Y);
-		SubProblem.assignment[start_X] = start_Y;
+	void findBound(Node *SubProblem, long start_X, long start_Y, long limit) {
+		SubProblem->actualCost = SubProblem->actualCost + inputArray[start_X][start_Y];
+		SubProblem->bound = SubProblem->actualCost;
+		SubProblem->doneX.insert(start_X);
+		SubProblem->doneY.insert(start_Y);
+		SubProblem->assignment[start_X] = start_Y;
 		for(int ix = 0 ; ix < limit; ix++) {
-			if(SubProblem.doneX.find(ix) == SubProblem.doneX.end()) {
+			if(SubProblem->doneX.find(ix) == SubProblem->doneX.end()) {
 				int minY = INF;
 				for(int iy = 0; iy < limit; iy++){
-					if(SubProblem.doneY.find(iy) == SubProblem.doneY.end()){
+					if(SubProblem->doneY.find(iy) == SubProblem->doneY.end()){
 						if( minY > inputArray[ix][iy]) {
 							minY = inputArray[ix][iy];
 						}
@@ -37,32 +37,32 @@ typedef struct {
 				}
 				if(minY != INF){
 					//printf(" minY : %d\n", minY);
-					SubProblem.bound = SubProblem.bound + minY;
+					SubProblem->bound = SubProblem->bound + minY;
 				}
 			}
 		}
-		if(SubProblem.doneX.size() == limit ) {
-			if( globalBound >  SubProblem.bound) {
-				globalBound = SubProblem.bound;
-				printf("New solution value found : %ld\n", SubProblem.bound);
-				// for( auto mapEntry : SubProblem.assignment) {
+		if(SubProblem->doneX.size() == limit ) {
+			if( globalBound >  SubProblem->bound) {
+				globalBound = SubProblem->bound;
+				printf("New solution value found : %ld\n", SubProblem->bound);
+				// for( auto mapEntry : SubProblem->assignment) {
 				// 	printf("JOB %ld ==> WORKER %ld\n", mapEntry.first, mapEntry.second );
 				// }
 			}
 		}
 	}
 
-	void recursion(Node &SubProblem, long start_X,long limit) {
+	void recursion(Node *SubProblem, long start_X,long limit) {
 		start_X++;
 		if(start_X < limit) {
 			printf("Recursive Call with start_X : %ld\n", start_X );
 			for(int iy = 0; iy < limit ; iy++) {
-				if(SubProblem.doneY.find(iy) == SubProblem.doneY.end()) {
+				if(SubProblem->doneY.find(iy) == SubProblem->doneY.end()) {
 					Node *SubPro = new Node();
-					memcpy(SubPro,&SubProblem, sizeof(Node));
-					findBound(*SubPro,start_X,iy,limit);
+					memcpy(SubPro,SubProblem, sizeof(Node));
+					findBound(SubPro,start_X,iy,limit);
 					if(SubPro->bound < globalBound) 
-						recursion(*SubPro,start_X,limit);
+						recursion(SubPro,start_X,limit);
 					else
 						printf("Branch pruned globalBound : %ld , solution.bound : %ld \n", globalBound, SubPro->bound);
 				}
@@ -70,13 +70,14 @@ typedef struct {
 		}
 	}
 
-	void start(long start_X, long limit) {
+	void start(long start_X, long limit) {		
 			for(int i = 0; i < limit ; i++ ) {
 					printf("findBound called with values start_X : %ld start_Y : %d limit : %ld\n", start_X,i,limit );
 					Node *SubPro = new Node();
-					findBound(*SubPro,start_X,i,limit);
-					if(SubPro->bound < globalBound) 
-						recursion(*SubPro,start_X,limit);
+					findBound(SubPro,start_X,i,limit);
+					if(SubPro->bound < globalBound) {
+						recursion(SubPro,start_X,limit);
+					}
 					else
 						printf("Branch pruned globalBound : %ld , solution.bound : %ld \n", globalBound, SubPro->bound);
 			}
@@ -86,7 +87,6 @@ typedef struct {
 			// 	start(start_X,limit);
 			// }		
 	}
-
 
 int main(int argc, char **argv) {
 
@@ -136,12 +136,13 @@ int main(int argc, char **argv) {
 	}
 	
 	
-	// Node *SubProblem = new Node();
+	 //Node *Solution = NULL;
 	// SubProblem->bound = 0;
 	// SubProblem->actualCost = 0;
 
 	start(0,noOfJob);
 	printf("Global Bound : %ld \n",globalBound);
+	
 
 	return 0;
 }
