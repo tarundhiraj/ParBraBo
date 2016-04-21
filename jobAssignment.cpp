@@ -5,6 +5,7 @@
 #include <set>
 #include <vector>
 
+#include "userCode.h"
 
 using namespace std;
 #define INF 99999999
@@ -12,6 +13,7 @@ using namespace std;
 long globalBound = INF;
 vector <long> currentSol;
 long **inputArray;
+int limit;
 
 typedef struct {
 		long bound;
@@ -20,78 +22,110 @@ typedef struct {
 		set<long> personDone;
 		vector <long> assignment;
 } Node;
+
+// Framework Code starts
+
+set <Node *> liveNodes;
+
+void insertLiveNode(Node *solution) {
+	if(solution->bound < globalBound) {
+		liveNodes.insert(solution);
+	} //else { printf("Branch pruned due to bound value\n");
+//	}
+}
+
+void updateBestSolution(Node *solution) {
+	if(globalBound >  solution->bound) {
+		globalBound = solution->bound;
+		currentSol = solution->assignment;
+	}
+}
 	
-void recursionPerson(Node *sol, long job, long person, int limit);
-
-	void recursionJob(Node *sol, long job, int limit) {
-		sol->jobDone.insert(job);
-
-		for(long i = 0;  i < limit; i++) {
-			if(sol->personDone.find(i) == sol->personDone.end()){
-				// create new Node which has previous details
-				Node * newSol = new Node();
-				newSol->bound = sol->bound;
-				newSol->actualCost = sol->actualCost;
-				newSol->assignment.resize(limit); 
-				for(auto job : sol->jobDone) {
-					newSol->jobDone.insert(job);
-				}
-				for(auto person : sol->personDone) {
-					newSol->personDone.insert(person);
-				}
-
-				for (int it = 0; it < limit ; it++) {
-					newSol->assignment[it] = sol->assignment[it];
-				}
-
-				if(newSol->bound < globalBound){
-					recursionPerson(newSol,job,i,limit);
-				} else {
-					printf("Branch pruned GlobalBound : %ld, SolutionBound : %ld \n",globalBound, newSol->bound );
-				}
-			}
+void * chooseBestLiveNode() {
+	int minBound = INF;
+	Node * liveNode = NULL;
+	for (auto sol : liveNodes) {
+		if(minBound > sol->bound) {
+			minBound = sol->bound;
+			liveNode = sol;
 		}
 	}
+	liveNodes.erase(liveNode);
+	return (void *)liveNode;
+}	
 
-	void recursionPerson(Node *sol, long job, long person, int limit) {
-		sol->personDone.insert(person);
-		sol->actualCost = sol->actualCost + inputArray[job][person];
-		sol->bound = sol->actualCost;
-		sol->assignment[job] = person;
 
-		for(long jobIt = 0; jobIt < limit ; jobIt++) {
-			if (sol->jobDone.find(jobIt) == sol->jobDone.end() ) {
-				long minJob2Person = INF;
-				for(long personIt = 0; personIt < limit; personIt++ ) {
-					if(sol->personDone.find(personIt) == sol->personDone.end()) {
-						if(minJob2Person > inputArray[jobIt][personIt]) {
-							minJob2Person = inputArray[jobIt][personIt];
-						}
-					}
-				}
-				if(minJob2Person != INF) {
-						sol->bound += minJob2Person;
-				}
-			}
-		}
+// void recursionPerson(Node *sol, long job, long person, int limit);
 
-		if( sol->jobDone.size() == limit){
-			if( globalBound > sol->bound) {
-				printf("Solution found : %ld \n", sol->bound);
-				globalBound = sol->bound;
-				currentSol = sol->assignment;
-			}
-		} else {
-			job++;
-			if(sol->bound < globalBound) {
+// 	void recursionJob(Node *sol, long job, int limit) {
+// 		sol->jobDone.insert(job);
 
-				recursionJob(sol,job,limit);
-			}
-			else {
-				printf("Branch pruned GlobalBound : %ld, SolutionBound : %ld \n",globalBound, sol->bound );
-			}
-		}
-}
+// 		for(long i = 0;  i < limit; i++) {
+// 			if(sol->personDone.find(i) == sol->personDone.end()){
+// 				// create new Node which has previous details
+// 				Node * newSol = new Node();
+// 				newSol->bound = sol->bound;
+// 				newSol->actualCost = sol->actualCost;
+// 				newSol->assignment.resize(limit); 
+// 				for(auto job : sol->jobDone) {
+// 					newSol->jobDone.insert(job);
+// 				}
+// 				for(auto person : sol->personDone) {
+// 					newSol->personDone.insert(person);
+// 				}
+
+// 				for (int it = 0; it < limit ; it++) {
+// 					newSol->assignment[it] = sol->assignment[it];
+// 				}
+
+// 				if(newSol->bound < globalBound){
+// 					recursionPerson(newSol,job,i,limit);
+// 				} else {
+// 					printf("Branch pruned GlobalBound : %ld, SolutionBound : %ld \n",globalBound, newSol->bound );
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	void recursionPerson(Node *sol, long job, long person, int limit) {
+// 		sol->personDone.insert(person);
+// 		sol->actualCost = sol->actualCost + inputArray[job][person];
+// 		sol->bound = sol->actualCost;
+// 		sol->assignment[job] = person;
+
+// 		for(long jobIt = 0; jobIt < limit ; jobIt++) {
+// 			if (sol->jobDone.find(jobIt) == sol->jobDone.end() ) {
+// 				long minJob2Person = INF;
+// 				for(long personIt = 0; personIt < limit; personIt++ ) {
+// 					if(sol->personDone.find(personIt) == sol->personDone.end()) {
+// 						if(minJob2Person > inputArray[jobIt][personIt]) {
+// 							minJob2Person = inputArray[jobIt][personIt];
+// 						}
+// 					}
+// 				}
+// 				if(minJob2Person != INF) {
+// 						sol->bound += minJob2Person;
+// 				}
+// 			}
+// 		}
+
+// 		if( sol->jobDone.size() == limit){
+// 			if( globalBound > sol->bound) {
+// 				printf("Solution found : %ld \n", sol->bound);
+// 				globalBound = sol->bound;
+// 				currentSol = sol->assignment;
+// 			}
+// 		} else {
+// 			job++;
+// 			if(sol->bound < globalBound) {
+
+// 				recursionJob(sol,job,limit);
+// 			}
+// 			else {
+// 				printf("Branch pruned GlobalBound : %ld, SolutionBound : %ld \n",globalBound, sol->bound );
+// 			}
+// 		}
+// }
 	
 
 int main(int argc, char **argv) {
@@ -106,7 +140,7 @@ int main(int argc, char **argv) {
 		exit(-2);
 
 	fscanf(inputFILE, "%d", &noOfJob);
-	
+	limit = noOfJob;
 	inputArray = (long **) malloc(noOfJob * sizeof(long *));
 	
 	int temp = 0;
@@ -123,10 +157,19 @@ int main(int argc, char **argv) {
 	}
 
 	Node *sol = new Node();
-	sol->bound = 0;
-	sol->actualCost = 0;
-	sol->assignment.resize(noOfJob);
-	recursionJob(sol,0,noOfJob);
+	//sol->bound = 0;
+	//sol->actualCost = 0;
+	//sol->assignment.resize(noOfJob);
+	//recursionJob(sol,0,noOfJob);
+
+	initialize((void *)sol);
+	liveNodes.insert(sol);
+
+	while(!liveNodes.empty()) {
+		printf("liveNodes size : %ld\n", liveNodes.size());
+		void * n = chooseBestLiveNode();
+		branch(n);
+	}
 
 	printf("solution : %ld\n",globalBound );
 	long size = currentSol.size();
