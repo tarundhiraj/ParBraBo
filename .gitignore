@@ -1,2 +1,5 @@
 out
 data/testGen
+obj/*
+bkp/*
+
