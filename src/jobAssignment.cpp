@@ -2,28 +2,18 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
-#include <set>
-#include <vector>
 
 #include "userCode.h"
 
 using namespace std;
-#define INF 99999999
+
 
 long globalBound = INF;
 vector <long> currentSol;
 long **inputArray;
 int limit;
 
-typedef struct {
-		long bound;
-		long actualCost;
-		set<long> jobDone;
-		set<long> personDone;
-		vector <long> assignment;
-} Node;
-
-// Framework Code starts
+//Framework Code starts
 
 set <Node *> liveNodes;
 
@@ -42,12 +32,29 @@ void updateBestSolution(Node *solution) {
 }
 	
 void * chooseBestLiveNode() {
-	int minBound = INF;
-	Node * liveNode = NULL;
+
+	// Following code implements best first
+	// int minBound = INF;
+	// Node * liveNode = NULL;
+	// for (auto sol : liveNodes) {
+	// 	if(minBound > sol->bound) {
+	// 		minBound = sol->bound;
+	// 		liveNode = sol;
+	// 	}
+	// }
+	// liveNodes.erase(liveNode);
+	// return (void *)liveNode;
+	
+	// Following code implements depth first 
+	// depth first results into more prunning of branches
+	Node *liveNode = NULL;
 	for (auto sol : liveNodes) {
-		if(minBound > sol->bound) {
-			minBound = sol->bound;
+		if(liveNode == NULL) {
 			liveNode = sol;
+		} else {
+			if(liveNode->yDone.size() < sol->yDone.size()) {
+				liveNode = sol;
+			}
 		}
 	}
 	liveNodes.erase(liveNode);
@@ -58,20 +65,20 @@ void * chooseBestLiveNode() {
 // void recursionPerson(Node *sol, long job, long person, int limit);
 
 // 	void recursionJob(Node *sol, long job, int limit) {
-// 		sol->jobDone.insert(job);
+// 		sol->yDone.insert(job);
 
 // 		for(long i = 0;  i < limit; i++) {
-// 			if(sol->personDone.find(i) == sol->personDone.end()){
+// 			if(sol->xDone.find(i) == sol->xDone.end()){
 // 				// create new Node which has previous details
 // 				Node * newSol = new Node();
 // 				newSol->bound = sol->bound;
 // 				newSol->actualCost = sol->actualCost;
 // 				newSol->assignment.resize(limit); 
-// 				for(auto job : sol->jobDone) {
-// 					newSol->jobDone.insert(job);
+// 				for(auto job : sol->yDone) {
+// 					newSol->yDone.insert(job);
 // 				}
-// 				for(auto person : sol->personDone) {
-// 					newSol->personDone.insert(person);
+// 				for(auto person : sol->xDone) {
+// 					newSol->xDone.insert(person);
 // 				}
 
 // 				for (int it = 0; it < limit ; it++) {
@@ -88,16 +95,16 @@ void * chooseBestLiveNode() {
 // 	}
 
 // 	void recursionPerson(Node *sol, long job, long person, int limit) {
-// 		sol->personDone.insert(person);
+// 		sol->xDone.insert(person);
 // 		sol->actualCost = sol->actualCost + inputArray[job][person];
 // 		sol->bound = sol->actualCost;
 // 		sol->assignment[job] = person;
 
 // 		for(long jobIt = 0; jobIt < limit ; jobIt++) {
-// 			if (sol->jobDone.find(jobIt) == sol->jobDone.end() ) {
+// 			if (sol->yDone.find(jobIt) == sol->yDone.end() ) {
 // 				long minJob2Person = INF;
 // 				for(long personIt = 0; personIt < limit; personIt++ ) {
-// 					if(sol->personDone.find(personIt) == sol->personDone.end()) {
+// 					if(sol->xDone.find(personIt) == sol->xDone.end()) {
 // 						if(minJob2Person > inputArray[jobIt][personIt]) {
 // 							minJob2Person = inputArray[jobIt][personIt];
 // 						}
@@ -109,7 +116,7 @@ void * chooseBestLiveNode() {
 // 			}
 // 		}
 
-// 		if( sol->jobDone.size() == limit){
+// 		if( sol->yDone.size() == limit){
 // 			if( globalBound > sol->bound) {
 // 				printf("Solution found : %ld \n", sol->bound);
 // 				globalBound = sol->bound;
