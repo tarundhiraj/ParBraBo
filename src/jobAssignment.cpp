@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
-#include <omp.h>
+//#include <omp.h>
 
 #include "userCode.h"
 
@@ -19,24 +19,24 @@ int limit;
 set <Node *> liveNodes;
 
 void insertLiveNode(Node *solution) {
-	#pragma omp critical (insert)
-	{
+	// #pragma omp critical (insert)
+	// {
 		if(solution->bound < globalBound) {
 			liveNodes.insert(solution);
 		} //else { printf("Branch pruned due to bound value\n");
 	//	}
-	}
+	//}
 }
 
 void updateBestSolution(Node *solution) {
-	#pragma omp critical (update)
-	{
+	// #pragma omp critical (update)
+	// {
 		if(globalBound >  solution->bound) {
 			printf("Solution found : %ld \n", solution->bound);
 			globalBound = solution->bound;
 			currentSol = solution->assignment;
 		}
-	}
+	//}
 }
 	
 void * chooseBestLiveNode() {
@@ -105,21 +105,21 @@ int main(int argc, char **argv) {
 	initialize((void *)sol);
 	liveNodes.insert(sol);
 
-	omp_set_num_threads(8);	
-	int numOfThreads;
+	// omp_set_num_threads(8);	
+	// int numOfThreads;
 
 	while(!liveNodes.empty()) { 
 		printf("liveNodes size : %ld\n", liveNodes.size());
-		#pragma omp parallel
-		{	numOfThreads = omp_get_num_threads();
+		// #pragma omp parallel
+		// {	numOfThreads = omp_get_num_threads();
 			void *n;
-			#pragma omp critical
-			{
+			// #pragma omp critical
+			// {
 				n = chooseBestLiveNode();
-			}
+			// }
 			if(n != NULL)
-			branch(n);
-		}
+				branch(n);
+		//}
 	}
 	
 
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 		printf("JOB : %ld assigned to PERSON : %ld\n", it, currentSol[it]);
 	}
 
-	printf("%d number of threads \n", numOfThreads );
+	//printf("%d number of threads \n", numOfThreads );
 
 	return 0;
 }
