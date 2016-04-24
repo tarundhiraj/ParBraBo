@@ -3,8 +3,8 @@ CC = gcc
 CXX = g++
 CPP_FILES = $(wildcard src/*.cpp)
 OBJ_FILES = $(addprefix obj/,$(notdir $(CPP_FILES:.cpp=.o)))
-CC_FLAGS = -I $(IDIR) -std=c++11
-LD_FLAGS =
+CC_FLAGS = -I $(IDIR) -std=c++11 -fopenmp
+LD_FLAGS = -fopenmp
 
 out : $(OBJ_FILES) 
 	$(CXX) $(LD_FLAGS) -o $@ $^

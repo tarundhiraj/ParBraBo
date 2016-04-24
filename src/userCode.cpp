@@ -1,75 +1,84 @@
 #include "userCode.h"
 
-void recursionPerson(Node *sol, long job, long person, int limit);
+typedef struct {
+	Node *sol;
+	long y;
+	long x;
+	int limit;
+} Evaluation;
 
-	void recursionJob(Node *sol, long job, int limit) {
-		sol->yDone.insert(job);
+void recursionx(Node *sol, long y, long x, int limit);
+void evaluate(void * EvaluationNode);
 
-		for(long i = 0;  i < limit; i++) {
-			if(sol->xDone.find(i) == sol->xDone.end()){
-				// create new Node which has previous details
-				Node * newSol = new Node();
-				newSol->bound = sol->bound;
-				newSol->actualCost = sol->actualCost;
-				newSol->assignment.resize(limit); 
-				for(auto job : sol->yDone) {
-					newSol->yDone.insert(job);
-				}
-				for(auto person : sol->xDone) {
-					newSol->xDone.insert(person);
-				}
+void recursiony(Node *sol, long y, int limit) {
+	sol->yDone.insert(y);
 
-				for (int it = 0; it < limit ; it++) {
-					newSol->assignment[it] = sol->assignment[it];
-				}
+	for(long i = 0;  i < limit; i++) {
+		if(sol->xDone.find(i) == sol->xDone.end()){
+			// create new Node which has previous details
+			Node * newSol = new Node();
+			newSol->bound = sol->bound;
+			newSol->actualCost = sol->actualCost;
+			newSol->assignment.resize(limit); 
 
-				if(newSol->bound < globalBound){
-					recursionPerson(newSol,job,i,limit);
-				} else {
-					printf("Branch pruned GlobalBound : %ld, SolutionBound : %ld \n",globalBound, newSol->bound );
+			for(auto y : sol->yDone) {
+				newSol->yDone.insert(y);
+			}
+
+			for(auto x : sol->xDone) {
+				newSol->xDone.insert(x);
+			}
+
+			for (int it = 0; it < limit ; it++) {
+				newSol->assignment[it] = sol->assignment[it];
+			}
+
+			if(newSol->bound < globalBound){
+				Evaluation *Eval =  new Evaluation();
+				Eval->sol = newSol;
+				Eval->y = y;
+				Eval->x = i;
+				Eval->limit = limit;
+				evaluate(Eval);
+			} else {
+				printf("Branch pruned GlobalBound : %ld, SolutionBound : %ld \n",globalBound, newSol->bound );
+			}
+		}
+	}
+}
+
+void recursionx(Node *sol, long y, long x, int limit) {
+	sol->xDone.insert(x);
+	sol->actualCost = sol->actualCost + inputArray[y][x];
+	sol->bound = sol->actualCost;
+	sol->assignment[y] = x;
+
+	for(long yIt = 0; yIt < limit ; yIt++) {
+		if (sol->yDone.find(yIt) == sol->yDone.end() ) {
+			long miny2x = INF;
+			for(long xIt = 0; xIt < limit; xIt++ ) {
+				if(sol->xDone.find(xIt) == sol->xDone.end()) {
+					if(miny2x > inputArray[yIt][xIt]) {
+						miny2x = inputArray[yIt][xIt];
+					}
 				}
+			}
+			if(miny2x != INF) {
+				sol->bound += miny2x;
 			}
 		}
 	}
 
-	void recursionPerson(Node *sol, long job, long person, int limit) {
-		sol->xDone.insert(person);
-		sol->actualCost = sol->actualCost + inputArray[job][person];
-		sol->bound = sol->actualCost;
-		sol->assignment[job] = person;
-
-		for(long jobIt = 0; jobIt < limit ; jobIt++) {
-			if (sol->yDone.find(jobIt) == sol->yDone.end() ) {
-				long minJob2Person = INF;
-				for(long personIt = 0; personIt < limit; personIt++ ) {
-					if(sol->xDone.find(personIt) == sol->xDone.end()) {
-						if(minJob2Person > inputArray[jobIt][personIt]) {
-							minJob2Person = inputArray[jobIt][personIt];
-						}
-					}
-				}
-				if(minJob2Person != INF) {
-						sol->bound += minJob2Person;
-				}
-			}
-		}
-
-		if( sol->yDone.size() == limit){
-			if( globalBound > sol->bound) {
-				printf("Solution found : %ld \n", sol->bound);
-				globalBound = sol->bound;
-				currentSol = sol->assignment;
-			}
+	if( sol->yDone.size() == limit){
+		updateBestSolution(sol);
+	} else {
+		y++;
+		if(sol->bound < globalBound) {
+			insertLiveNode(sol);
 		} else {
-			job++;
-			if(sol->bound < globalBound) {
-				liveNodes.insert(sol);
-				//recursionJob(sol,job,limit);
-			}
-			else {
-				printf("Branch pruned GlobalBound : %ld, SolutionBound : %ld \n",globalBound, sol->bound );
-			}
+			printf("Branch pruned GlobalBound : %ld, SolutionBound : %ld \n",globalBound, sol->bound );
 		}
+	}
 }
 
 
@@ -82,17 +91,23 @@ void initialize(void * root) {
 
 void branch(void * SubPro) {
 	Node *SubProNode = (Node *)SubPro;
-	long nextJob = 0;
+	long nexty = 0;
 	for (long i = 0; i < limit ; i++) {
 		if(SubProNode->yDone.find(i) == SubProNode->yDone.end()) {
-			nextJob = i;
+			nexty = i;
 			break;
 		}
 	}
-	recursionJob(SubProNode,nextJob,limit);
+	recursiony(SubProNode,nexty,limit);
 }
 
 void evaluate(void * SubPro) {
-
+	Evaluation *Eval = (Evaluation *)SubPro;
+	Node *newSol = Eval->sol;
+	long y = Eval->y;
+	long x = Eval->x;
+	long limit = Eval->limit;
+	recursionx(newSol,y,x,limit);
+	delete(Eval);
 }
 
